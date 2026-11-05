@@ -503,6 +503,32 @@ main { display: block; padding-top: 12px; }
 .modal-actions { display: flex; gap: 10px; }
 .modal-actions .btn { flex: 1; }
 
+/* ---------------- 图形题（内联 SVG） ----------------
+ * 图形题把 SVG 直接写在 stem 里，尺寸完全由 CSS 控制（SVG 本身不带 width/height）
+ * 375px 宽度下 svg 宽度 = 卡片内容宽度，不产生横向滚动
+ */
+
+.qfig {
+  margin: 14px auto;
+  text-align: center;
+}
+
+.qfig svg {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  color: var(--text);          /* 图形一律 currentColor，这里落地为正文色 */
+  overflow: visible;           /* 字母标注紧贴边框时不裁切 */
+}
+
+/* 结果页 / 错题本里的图谱再收敛一档，避免在列表里挤压文字 */
+.ri-stem .qfig,
+.err-stem .qfig { margin: 10px auto; }
+.ri-stem .qfig svg,
+.err-stem .qfig svg { max-width: 280px; }
+
 /* =============================================================
  * 响应式
  * ============================================================= */

@@ -16,8 +16,15 @@
     settings: 'g9math.settings.v1'
   };
   var MAX_SESSIONS = 200;
-  var KP_TOTAL = 6;          // 每个知识点的题目总数
-  var Q_TOTAL = 36;          // 题库总题数
+  /* 每知识点题数 / 题库总题数：按 data.js 实际内容动态取（v2 起每 kp 12 题、共 72 题），
+   * 硬编码兜底值仅用于 data.js 未加载的极端情形 */
+  var KP_TOTAL = (function () {
+    var qs = (G.QUESTIONS || []), c = {}, m = 0;
+    for (var i = 0; i < qs.length; i++) c[qs[i].kp] = (c[qs[i].kp] || 0) + 1;
+    for (var k in c) if (Object.prototype.hasOwnProperty.call(c, k) && c[k] > m) m = c[k];
+    return m || 12;
+  })();
+  var Q_TOTAL = (G.QUESTIONS || []).length || 72;
   var DIFF_LABEL = { basic: '基础', medium: '提高', hard: '挑战' };
   var DIFF_ORDER = ['basic', 'medium', 'hard'];
 
@@ -97,7 +104,7 @@
     var qs = (G.QUESTIONS || []);
     for (var i = 0; i < qs.length; i++) if (qs[i].kp === v.lastKp) { kpOk = true; break; }
     var dOk = ['all', 'basic', 'medium', 'hard'].indexOf(v.lastDifficulty) >= 0;
-    var cOk = (v.lastCount === 3 || v.lastCount === 6);
+    var cOk = (v.lastCount === 3 || v.lastCount === 6 || v.lastCount === 12);
     return {
       version: 1,
       lastKp: kpOk ? v.lastKp : base.lastKp,
@@ -773,7 +780,7 @@
     html += '</div></section>';
 
     html += '<section class="sec"><h3>3. 题量</h3><div class="chips" data-group="count">';
-    [[3, '3 题'], [6, '6 题（全部）']].forEach(function (c) {
+    [[3, '3 题'], [6, '6 题'], [12, '12 题（全部）']].forEach(function (c) {
       var on = String(c[0]) === String(cfg.count) ? ' on' : '';
       var disabled = pool === 0 ? ' disabled' : '';
       html += '<button class="chip' + on + '"' + disabled + ' data-act="cfg-count" data-id="' + c[0] + '">' + c[1] + '</button>';
@@ -787,7 +794,7 @@
     html += '<div class="actions"><button class="btn primary big" data-act="start"'
       + (pool === 0 ? ' disabled' : '') + '>开始练习</button></div>';
 
-    html += '<p class="foot-note">题量档位按 PRD 裁决为 3 / 6（单知识点题库共 6 题）；跨知识点混合练习为 P1 暂不提供。</p>';
+    html += '<p class="foot-note">题量档位按 PRD 裁决为 3 / 6 / 12（单知识点题库共 ' + KP_TOTAL + ' 题）；跨知识点混合练习为 P1 暂不提供。</p>';
     return html;
   }
 
@@ -1032,10 +1039,10 @@
     html += '</div></section>';
 
     html += '<section class="sec"><h3>口径说明</h3><ul class="list small-list">'
-      + '<li>掌握度（每知识点）= 0.5×正确率 + 0.4×覆盖度（已做不同题数/6）+ 0.1×(1−未攻克错题数/6，封顶 1)；该知识点从未作答时记 0。</li>'
+      + '<li>掌握度（每知识点）= 0.5×正确率 + 0.4×覆盖度（已做不同题数/' + KP_TOTAL + '）+ 0.1×(1−未攻克错题数/' + KP_TOTAL + '，封顶 1)；该知识点从未作答时记 0。</li>'
       + '<li>总掌握度 = 6 个知识点掌握度的算术平均（未开始的知识点按 0 计入分母）。</li>'
       + '<li>正确率 = 累计答对次数 / 累计作答次数（空作答也计入分母）。</li>'
-      + '<li>做题量 = 累计作答次数；副指标「题库覆盖」= 已做过的不同题目数 / 36。</li>'
+      + '<li>做题量 = 累计作答次数；副指标「题库覆盖」= 已做过的不同题目数 / ' + Q_TOTAL + '。</li>'
       + '<li>错题被移除或清空后，未攻克数下降，掌握度会上升——这是有意设计（错题处理掉即视为减负）。</li>'
       + '</ul></section>';
 
