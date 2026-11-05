@@ -1,0 +1,2 @@
+d=0.866  q-similarity-02  q-similarity-04
+d=0.863  q-quad-eq-04  q-quad-eq-08
