@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>九年级数学学习工作台</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <button id="backBtn" class="icon-btn" hidden aria-label="返回">‹</button>
+    <h1 id="topTitle">知识点</h1>
+  </header>
+
+  <main id="view">
+    <p class="lead">正在加载题库……</p>
+  </main>
+
+  <nav id="tabbar" aria-label="主导航">
+    <button class="tab" data-tab="kp"><span class="tab-ico">📘</span><span class="tab-txt">知识点</span></button>
+    <button class="tab" data-tab="practice"><span class="tab-ico">✏️</span><span class="tab-txt">练习</span></button>
+    <button class="tab" data-tab="errors"><span class="tab-ico">📕</span><span class="tab-txt">错题本</span></button>
+    <button class="tab" data-tab="stats"><span class="tab-ico">📊</span><span class="tab-txt">统计</span></button>
+  </nav>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="modal" class="modal" role="dialog" aria-modal="true"></div>
+</div>
+
+<!-- 普通 script 顺序引入，禁用 ES module / fetch / 任何网络请求 -->
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+  /* 底部导航：只改 hash，由 app.js 的 hashchange 处理渲染 */
+  (function () {
+    var bar = document.getElementById('tabbar');
+    bar.addEventListener('click', function (ev) {
+      var t = ev.target;
+      while (t && t !== document.body && !(t.getAttribute && t.getAttribute('data-tab'))) t = t.parentNode;
+      if (!t || t === document.body || !t.getAttribute) return;
+      var tab = t.getAttribute('data-tab');
+      if (location.hash === '#/' + tab) return;
+      location.hash = '#/' + tab;
+    });
+  })();
+</script>
+</body>
+</html>
