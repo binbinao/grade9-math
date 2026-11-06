@@ -16,15 +16,31 @@
     settings: 'g9math.settings.v1'
   };
   var MAX_SESSIONS = 200;
-  /* 每知识点题数 / 题库总题数：按 data.js 实际内容动态取（v2 起每 kp 12 题、共 72 题），
-   * 硬编码兜底值仅用于 data.js 未加载的极端情形 */
+  /* 每知识点题数 / 题库总题数：按 data.js 实际内容动态取（v4 起每 kp 50 题、共 300 题），
+   * 硬编码兜底值（50 / 300）仅在 data.js 未加载的极端情形生效 */
   var KP_TOTAL = (function () {
     var qs = (G.QUESTIONS || []), c = {}, m = 0;
     for (var i = 0; i < qs.length; i++) c[qs[i].kp] = (c[qs[i].kp] || 0) + 1;
     for (var k in c) if (Object.prototype.hasOwnProperty.call(c, k) && c[k] > m) m = c[k];
-    return m || 12;
+    return m || 50;
   })();
-  var Q_TOTAL = (G.QUESTIONS || []).length || 72;
+  var Q_TOTAL = (G.QUESTIONS || []).length || 300;
+  /* 题量档位：按实际题库动态生成 —— 去重、升序、只保留 <= KP_TOTAL 的档位。
+   * KP_TOTAL >= 50 → [3,6,12,25,50]；KP_TOTAL == 12（旧题库）→ [3,6,12]（行为与改造前一致）。
+   * 设置校验与档位 chip 渲染共用这一份计算结果，避免出现第二份硬编码列表。 */
+  var COUNT_TIERS = (function () {
+    var raw = [3, 6, 12, 25, KP_TOTAL], out = [];
+    raw.sort(function (a, b) { return a - b; });
+    for (var i = 0; i < raw.length; i++) {
+      var n = raw[i];
+      if (!(n > 0) || n > KP_TOTAL) continue;
+      if (out.indexOf(n) < 0) out.push(n);
+    }
+    return out;
+  })();
+  function isCountTier(n) {
+    return typeof n === 'number' && COUNT_TIERS.indexOf(n) >= 0;
+  }
   var DIFF_LABEL = { basic: '基础', medium: '提高', hard: '挑战' };
   var DIFF_ORDER = ['basic', 'medium', 'hard'];
 
@@ -104,7 +120,7 @@
     var qs = (G.QUESTIONS || []);
     for (var i = 0; i < qs.length; i++) if (qs[i].kp === v.lastKp) { kpOk = true; break; }
     var dOk = ['all', 'basic', 'medium', 'hard'].indexOf(v.lastDifficulty) >= 0;
-    var cOk = (v.lastCount === 3 || v.lastCount === 6 || v.lastCount === 12);
+    var cOk = isCountTier(v.lastCount);
     return {
       version: 1,
       lastKp: kpOk ? v.lastKp : base.lastKp,
@@ -780,10 +796,11 @@
     html += '</div></section>';
 
     html += '<section class="sec"><h3>3. 题量</h3><div class="chips" data-group="count">';
-    [[3, '3 题'], [6, '6 题'], [12, '12 题（全部）']].forEach(function (c) {
-      var on = String(c[0]) === String(cfg.count) ? ' on' : '';
+    COUNT_TIERS.forEach(function (n) {
+      var label = (n === KP_TOTAL) ? (n + ' 题（全部）') : (n + ' 题');
+      var on = String(n) === String(cfg.count) ? ' on' : '';
       var disabled = pool === 0 ? ' disabled' : '';
-      html += '<button class="chip' + on + '"' + disabled + ' data-act="cfg-count" data-id="' + c[0] + '">' + c[1] + '</button>';
+      html += '<button class="chip' + on + '"' + disabled + ' data-act="cfg-count" data-id="' + n + '">' + label + '</button>';
     });
     html += '</div></section>';
 
@@ -794,7 +811,7 @@
     html += '<div class="actions"><button class="btn primary big" data-act="start"'
       + (pool === 0 ? ' disabled' : '') + '>开始练习</button></div>';
 
-    html += '<p class="foot-note">题量档位按 PRD 裁决为 3 / 6 / 12（单知识点题库共 ' + KP_TOTAL + ' 题）；跨知识点混合练习为 P1 暂不提供。</p>';
+    html += '<p class="foot-note">题量档位 ' + COUNT_TIERS.join(' / ') + '（单知识点题库共 ' + KP_TOTAL + ' 题，按实际题库动态生成）；跨知识点混合练习为 P1 暂不提供。</p>';
     return html;
   }
 
@@ -1310,6 +1327,7 @@
     KEYS: KEYS,
     KP_TOTAL: KP_TOTAL,
     Q_TOTAL: Q_TOTAL,
+    COUNT_TIERS: COUNT_TIERS,
     DIFF_LABEL: DIFF_LABEL,
     normFill: normFill,
     parseRational: parseRational,
